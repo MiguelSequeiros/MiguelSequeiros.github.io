@@ -1,78 +1,35 @@
 <!-- create a html file with vuejs with two text areas and a button that converts one input from ddl to json schema -->
 <html>
+
 <head>
-    <title>Vuejs</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.js"></script>
+	<title>Vuejs</title>
+	<script src="https://cdn.jsdelivr.net/npm/sql-ddl-to-json-schema@4.0.6/lib/index.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.js"></script>
 </head>
+
 <body>
-    <div id="app">
-        <textarea v-model="ddl"></textarea>
-        <textarea v-model="json"></textarea>
-        <button @click="convert">Convert</button>
-    </div>
-    <script>
-        var app = new Vue({
-            el: '#app',
-            data: {
-                ddl: '',
-                json: ''
-            },
-            methods: {
-                convert: function() {
-                    var ddl = this.ddl;
-                    var json = '';
-                    var lines = ddl.split('\n');
-                    var first = true;
-                    for (var i = 0; i < lines.length; i++) {
-                        var line = lines[i];
-                        if (line.trim().startsWith('CREATE TABLE')) {
-                            var tableName = line.split(' ')[2];
-                            json += '{ "type": "object", "properties": {';
-                            var properties = '';
-                            var primary = '';
-                            var primaryKey = '';
-                            var types = '';
-                            var comments = '';
-                            var line = lines[i + 1];
-                            while (!line.trim().startsWith(')') && i < lines.length) {
-                                if (!line.trim().startsWith('CONSTRAINT') && !line.trim().startsWith('PRIMARY KEY')) {
-                                    var parts = line.split(' ');
-                                    if (parts[0].trim() == 'PRIMARY') {
-                                        primary = '"primary": true,';
-                                        primaryKey = '"primaryKey": "' + parts[2] + '",';
-                                    }
-                                    if (parts[0].trim() == 'COMMENT') {
-                                        comments += '"' + parts[2] + '": "' + parts[3] + '",';
-                                    }
-                                    if (parts[0].trim() == 'INT') {
-                                        types += '"' + parts[2] + '": "integer",';
-                                    }
-                                    if (parts[0].trim() == 'VARCHAR') {
-                                        types += '"' + parts[2] + '": "string",';
-                                    }
-                                    if (parts[0].trim() == 'DATETIME') {
-                                        types += '"' + parts[2] + '": "string",';
-                                    }
-                                    if (parts[0].trim() == 'DOUBLE') {
-                                        types += '"' + parts[2] + '": "number",';
-                                    }
-                                    if (parts[0].trim() == 'DECIMAL') {
-                                        types += '"' + parts[2] + '": "number",';
-                                    }
-                                    if (parts[0].trim() == 'BOOLEAN') {
-                                        types += '"' + parts[2] + '": "boolean",';
-                                    }
-                                }
-                                i++;
-                                line = lines[i];
-                            }
-                            json += primary + primaryKey + types + comments + '} },';
-                        }
-                    }
-                    this.json = json;
-                }
-            }
-        });
-    </script>
+	<div id="app">
+		<textarea v-model="ddl"></textarea>
+		<textarea v-model="json"></textarea>
+		<button @click="convert">Convert</button>
+	</div>
+	<script>
+		const { Parser } = require('sql-ddl-to-json-schema');
+		var parser = new Parser('mysql')
+		var app = new Vue({
+			el: '#app',
+			data: {
+				ddl: '',
+				json: ''
+			},
+			methods: {
+				convert: function () {
+					const jsonSchemaDocuments = parser.feed(this.ddl).toJsonSchemaArray({})
+					this.json = jsonSchemaDocuments
+				}	
+			}
+		});
+	</script>
 </body>
+
 </html>
